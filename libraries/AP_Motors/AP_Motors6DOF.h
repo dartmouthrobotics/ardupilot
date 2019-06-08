@@ -46,7 +46,7 @@ public:
     // var_info for holding Parameter information
     static const struct AP_Param::GroupInfo        var_info[];
 
-    void set_servo_channel_manual_override(uint32_t channel, uint32_t pwm);
+    void set_servo_channel_manual_override(int8_t channel, uint16_t pwm);
 
 protected:
     // return current_limit as a number from 0 ~ 1 in the range throttle_min to throttle_max
