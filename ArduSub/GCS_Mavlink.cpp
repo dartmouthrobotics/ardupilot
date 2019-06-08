@@ -521,8 +521,50 @@ MAV_RESULT GCS_MAVLINK_Sub::handle_command_long_packet(const mavlink_command_lon
         }
         return MAV_RESULT_ACCEPTED;
 
+    case MAV_CMD_RAW_MOTOR_OVERRIDE_SET:
+        if (!handle_raw_motor_override_packet(packet)) {
+            return MAV_RESULT_FAILED;
+        }
+
+        return MAV_RESULT_ACCEPTED;
+
     default:
         return GCS_MAVLINK::handle_command_long_packet(packet);
+    }
+}
+
+
+// This is hacky, but here is how it works. The "confirmation" byte is coopted here to
+// select up to 7 motors at once. Motor number i is selected if bit i is 1
+// in the confirmation byte.
+MAV_RESULT GCS_MAVLINK_Sub::handle_raw_motor_override_packet(const mavlink_command_long_t &packet) {
+    uint32_t current_time = AP_HAL::millis();
+
+    uint8_t motors_selected_byte = packet.confirmation;
+    int num_selected_motors = 0;
+
+    static unsigned char mask[] = {128, 64, 32, 16, 8, 4, 2, 1};
+
+    for (int motor_number = 0; motor_number < AP_MOTORS_MAX_NUM_MOTORS; ++motor_number) {
+        // true if the numbr of the bit is set corresponding to the motor is set
+        bool motor_is_selected = motors_selected_byte & mask[motor_number];
+
+        if (motor_is_selected) {
+            switch (num_selected_motors) {
+                case 0: motor_speed = packet.param1;
+                case 1: motor_speed = packet.param2;
+                case 2: motor_speed = packet.param3;
+                case 3: motor_speed = packet.param4;
+                case 4: motor_speed = packet.param5
+                case 5: motor_speed = packet.param6;
+                case 6: motor_speed = packet.param7;
+                default: break;
+            }
+
+            // one more hack. Cast the speed to a uint16_t to make it a valid pwm value.
+            motors.set_manual_servo_override(motor_number, uint16_t(motor_speed));
+            ++num_selected_motors;
+        }
     }
 }
 

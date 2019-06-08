@@ -19,6 +19,7 @@
 
 #include <AP_BattMonitor/AP_BattMonitor.h>
 #include <AP_HAL/AP_HAL.h>
+#include <GCS_MAVLink/GCS.h>
 #include "AP_Motors6DOF.h"
 
 extern const AP_HAL::HAL& hal;
@@ -262,9 +263,30 @@ void AP_Motors6DOF::output_to_motors()
     // send output to each motor
     for (i=0; i<AP_MOTORS_MAX_NUM_MOTORS; i++) {
         if (motor_enabled[i]) {
-            rc_write(i, motor_out[i]);
+            if (should_use_manual_override()) {
+                rc_write(i, _servo_channel_manual_overrides[i]);
+            } else {
+                rc_write(i, motor_out[i]);
+            }
         }
     }
+}
+
+bool AP_Motors6DOF::should_use_manual_override() {
+    uint32_t current_time = AP_HAL::millis();
+
+    // if this if statement passes, the clock probably wrapped back around 
+    if (current_time < _last_manual_servo_override_set) {
+        return false;
+    }
+
+    // this if statement will happen if less than the configured time has elapsed since
+    // the last manual override was set.
+    if (current_time - _last_manual_servo_override_set < AP_MOTORS_MANUAL_OVERRIDE_DURATION_MILLIS) {
+        return true; 
+    } 
+
+    return false;
 }
 
 float AP_Motors6DOF::get_current_limit_max_throttle()
@@ -543,4 +565,10 @@ void AP_Motors6DOF::output_armed_stabilizing_vectored_6dof()
             _thrust_rpyt_out[i] = constrain_float(_motor_reverse[i]*(rpt_out[i]/rpt_max + yfl_out[i]/yfl_max),-1.0f,1.0f);
         }
     }
+}
+
+void AP_Motors6DOF::set_servo_channel_manual_override(uint32_t channel, uint32_t pwm) {
+    _last_manual_override_set = AP_HAL::millis();
+
+    _servo_channel_manual_overrides[channel] = pwm;
 }

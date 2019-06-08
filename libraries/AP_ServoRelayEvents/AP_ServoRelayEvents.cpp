@@ -33,8 +33,8 @@ bool AP_ServoRelayEvents::do_set_servo(uint8_t _channel, uint16_t pwm)
         return false;
     }
     if (c->get_function() != SRV_Channel::k_none) {
-        gcs().send_text(MAV_SEVERITY_INFO, "ServoRelayEvent: Channel %d is already in use", _channel);
-        return false;
+        gcs().send_text(MAV_SEVERITY_INFO, "ServoRelayEvent: Channel %d is already in use. HETHTEHJGFHJAFG", _channel);
+        //return false;
     }
     if (type == EVENT_TYPE_SERVO && 
         channel == _channel) {
@@ -74,7 +74,7 @@ bool AP_ServoRelayEvents::do_repeat_servo(uint8_t _channel, uint16_t _servo_valu
     }
     if (c->get_function() != SRV_Channel::k_none) {
         gcs().send_text(MAV_SEVERITY_INFO, "ServoRelayEvent: Channel %d is already in use", _channel);
-        return false;
+        //return false;
     }
     channel = _channel;
     type = EVENT_TYPE_SERVO;
