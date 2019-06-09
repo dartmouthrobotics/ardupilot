@@ -576,8 +576,8 @@ void AP_Motors6DOF::output_armed_stabilizing_vectored_6dof()
     }
 }
 
+// constrains the input pwm to the valid range and sets an override.
 void AP_Motors6DOF::set_servo_channel_manual_override(int8_t channel, uint16_t pwm) {
     _last_manual_servo_override_set = AP_HAL::millis();
-
-    _servo_channel_manual_overrides[channel] = pwm;
+    _servo_channel_manual_overrides[channel] = constrain_int16(pwm, _throttle_radio_min, _throttle_radio_max);
 }
