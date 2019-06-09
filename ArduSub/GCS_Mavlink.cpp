@@ -521,7 +521,7 @@ MAV_RESULT GCS_MAVLINK_Sub::handle_command_long_packet(const mavlink_command_lon
         }
         return MAV_RESULT_ACCEPTED;
 
-    case 9999: // this is not taken, so lets give it a shot! For now this is the motor override command id YOLO
+    case 9999: // this is not taken, so lets give it a shot! For now this is the motor override command id. Sam Lensgraf 6/9/2019.
         if (!handle_raw_motor_override_packet(packet)) {
             return MAV_RESULT_FAILED;
         }
@@ -552,9 +552,9 @@ void copy_float_into_uints(float float_data, uint16_t* destination_1, uint16_t* 
     memcpy((void*)destination_2, dest_2_bytes, 2);
 }
 
-// This is hacky, but here is how it works. The "confirmation" byte is coopted here to
-// select up to 7 motors at once. Motor number i is selected if bit i is 1
-// in the confirmation byte.
+// unpacks the four floating point numbers given as the first four params of the COMMAND_LONG packet
+// into eight uint16_t values. The uint16_t is used in this codebase to hold values sent to the motors
+// as a PWM value
 bool GCS_MAVLINK_Sub::handle_raw_motor_override_packet(const mavlink_command_long_t &packet) {
     float motor_01_bytes = packet.param1;
     float motor_23_bytes = packet.param2;

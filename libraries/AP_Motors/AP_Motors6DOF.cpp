@@ -19,7 +19,6 @@
 
 #include <AP_BattMonitor/AP_BattMonitor.h>
 #include <AP_HAL/AP_HAL.h>
-#include <GCS_MAVLink/GCS.h>
 #include "AP_Motors6DOF.h"
 
 extern const AP_HAL::HAL& hal;
