@@ -272,8 +272,18 @@ void AP_Motors6DOF::output_to_motors()
     }
 }
 
+// returns true if the code should allow our hacky implementation of manually set speed
+// overrides to be used.
 bool AP_Motors6DOF::should_use_manual_override() {
     uint32_t current_time = AP_HAL::millis();
+
+    // what is a spool state? no idea. The function that calls this one
+    // explicity sets the motors to neutral if any of these
+    bool spool_state_requires_neutral_motors = _spool_state == SpoolState::SHUT_DOWN || _spool_state == SpoolState::GROUND_IDLE;
+
+    if (spool_state_requires_neutral_motors) {
+        return false; 
+    }
 
     // if this if statement passes, the clock probably wrapped back around 
     if (current_time < _last_manual_servo_override_set) {

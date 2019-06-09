@@ -534,20 +534,22 @@ MAV_RESULT GCS_MAVLINK_Sub::handle_command_long_packet(const mavlink_command_lon
 }
 
 
-void copy_float_into_uints(float float_data, uint16_t& destination_1, uint16_t& destination_2) {
+void copy_float_into_uints(float float_data, uint16_t* destination_1, uint16_t* destination_2) {
     char data[4];
 
     char dest_1_bytes[2];
     char dest_2_bytes[2];
 
+    memcpy(data, &float_data, 4);
+
     dest_1_bytes[0] = data[0];
     dest_1_bytes[1] = data[1];
 
-    dest_2_bytes[0] = data[0];
-    dest_2_bytes[1] = data[1];
+    dest_2_bytes[0] = data[2];
+    dest_2_bytes[1] = data[3];
 
-    memcpy(destination_1, dest_1_bytes, 2);
-    memcpy(destination_2, dest_2_bytes, 2);
+    memcpy((void*)destination_1, dest_1_bytes, 2);
+    memcpy((void*)destination_2, dest_2_bytes, 2);
 }
 
 // This is hacky, but here is how it works. The "confirmation" byte is coopted here to
@@ -559,28 +561,28 @@ bool GCS_MAVLINK_Sub::handle_raw_motor_override_packet(const mavlink_command_lon
     float motor_45_bytes = packet.param3;
     float motor_67_bytes = packet.param4;
 
-    uint16_t motor_0;
-    uint16_t motor_1;
-    uint16_t motor_2;
-    uint16_t motor_3;
-    uint16_t motor_4;
-    uint16_t motor_5;
-    uint16_t motor_6;
-    uint16_t motor_7;
+    uint16_t motor_0_pwm;
+    uint16_t motor_1_pwm;
+    uint16_t motor_2_pwm;
+    uint16_t motor_3_pwm;
+    uint16_t motor_4_pwm;
+    uint16_t motor_5_pwm;
+    uint16_t motor_6_pwm;
+    uint16_t motor_7_pwm;
 
-    copy_float_into_uints(motor_01_bytes, motor_0, motor_1);
-    copy_float_into_uints(motor_23_bytes, motor_2, motor_3);
-    copy_float_into_uints(motor_45_bytes, motor_4, motor_5);
-    copy_float_into_uints(motor_67_bytes, motor_6, motor_7);
+    copy_float_into_uints(motor_01_bytes, &motor_0_pwm, &motor_1_pwm);
+    copy_float_into_uints(motor_23_bytes, &motor_2_pwm, &motor_3_pwm);
+    copy_float_into_uints(motor_45_bytes, &motor_4_pwm, &motor_5_pwm);
+    copy_float_into_uints(motor_67_bytes, &motor_6_pwm, &motor_7_pwm);
 
-    sub.motors.set_servo_channel_manual_override(0, motor_0);
-    sub.motors.set_servo_channel_manual_override(1, motor_1);
-    sub.motors.set_servo_channel_manual_override(2, motor_2);
-    sub.motors.set_servo_channel_manual_override(3, motor_3);
-    sub.motors.set_servo_channel_manual_override(4, motor_4);
-    sub.motors.set_servo_channel_manual_override(5, motor_5);
-    sub.motors.set_servo_channel_manual_override(6, motor_6);
-    sub.motors.set_servo_channel_manual_override(7, motor_7);
+    sub.motors.set_servo_channel_manual_override(0, motor_0_pwm);
+    sub.motors.set_servo_channel_manual_override(1, motor_1_pwm);
+    sub.motors.set_servo_channel_manual_override(2, motor_2_pwm);
+    sub.motors.set_servo_channel_manual_override(3, motor_3_pwm);
+    sub.motors.set_servo_channel_manual_override(4, motor_4_pwm);
+    sub.motors.set_servo_channel_manual_override(5, motor_5_pwm);
+    sub.motors.set_servo_channel_manual_override(6, motor_6_pwm);
+    sub.motors.set_servo_channel_manual_override(7, motor_7_pwm);
 
     return true;
 }
