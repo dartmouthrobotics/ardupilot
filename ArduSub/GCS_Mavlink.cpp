@@ -534,37 +534,53 @@ MAV_RESULT GCS_MAVLINK_Sub::handle_command_long_packet(const mavlink_command_lon
 }
 
 
+void copy_float_into_uints(float float_data, uint16_t& destination_1, uint16_t& destination_2) {
+    char data[4];
+
+    char dest_1_bytes[2];
+    char dest_2_bytes[2];
+
+    dest_1_bytes[0] = data[0];
+    dest_1_bytes[1] = data[1];
+
+    dest_2_bytes[0] = data[0];
+    dest_2_bytes[1] = data[1];
+
+    memcpy(destination_1, dest_1_bytes, 2);
+    memcpy(destination_2, dest_2_bytes, 2);
+}
+
 // This is hacky, but here is how it works. The "confirmation" byte is coopted here to
 // select up to 7 motors at once. Motor number i is selected if bit i is 1
 // in the confirmation byte.
 bool GCS_MAVLINK_Sub::handle_raw_motor_override_packet(const mavlink_command_long_t &packet) {
-    uint8_t motors_selected_byte = packet.confirmation;
-    int num_selected_motors = 0;
+    float motor_01_bytes = packet.param1;
+    float motor_23_bytes = packet.param2;
+    float motor_45_bytes = packet.param3;
+    float motor_67_bytes = packet.param4;
 
-    static unsigned char mask[] = {128, 64, 32, 16, 8, 4, 2, 1};
+    uint16_t motor_0;
+    uint16_t motor_1;
+    uint16_t motor_2;
+    uint16_t motor_3;
+    uint16_t motor_4;
+    uint16_t motor_5;
+    uint16_t motor_6;
+    uint16_t motor_7;
 
-    for (int motor_number = 0; motor_number < AP_MOTORS_MAX_NUM_MOTORS; ++motor_number) {
-        // true if the numbr of the bit is set corresponding to the motor is set
-        bool motor_is_selected = motors_selected_byte & mask[motor_number];
+    copy_float_into_uints(motor_01_bytes, motor_0, motor_1);
+    copy_float_into_uints(motor_23_bytes, motor_2, motor_3);
+    copy_float_into_uints(motor_45_bytes, motor_4, motor_5);
+    copy_float_into_uints(motor_67_bytes, motor_6, motor_7);
 
-        if (motor_is_selected) {
-            float motor_speed = 0.0;
-            switch (num_selected_motors) {
-                case 0: motor_speed = packet.param1; break;
-                case 1: motor_speed = packet.param2; break;
-                case 2: motor_speed = packet.param3; break;
-                case 3: motor_speed = packet.param4; break;
-                case 4: motor_speed = packet.param5; break;
-                case 5: motor_speed = packet.param6; break;
-                case 6: motor_speed = packet.param7; break;
-                default: break;
-            }
-
-            // one more hack. Cast the speed to a uint16_t to make it a valid pwm value.
-            sub.motors.set_servo_channel_manual_override(motor_number, uint16_t(motor_speed));
-            ++num_selected_motors;
-        }
-    }
+    sub.motors.set_servo_channel_manual_override(0, motor_0);
+    sub.motors.set_servo_channel_manual_override(1, motor_1);
+    sub.motors.set_servo_channel_manual_override(2, motor_2);
+    sub.motors.set_servo_channel_manual_override(3, motor_3);
+    sub.motors.set_servo_channel_manual_override(4, motor_4);
+    sub.motors.set_servo_channel_manual_override(5, motor_5);
+    sub.motors.set_servo_channel_manual_override(6, motor_6);
+    sub.motors.set_servo_channel_manual_override(7, motor_7);
 
     return true;
 }
