@@ -46,6 +46,8 @@ private:
     void handle_rc_channels_override(const mavlink_message_t *msg) override;
     bool try_send_message(enum ap_message id) override;
 
+    bool handle_raw_motor_override_packet(const mavlink_command_long_t &packet);
+
     bool send_info(void);
 
     MAV_MODE base_mode() const override;

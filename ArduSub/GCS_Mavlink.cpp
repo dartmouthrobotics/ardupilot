@@ -521,9 +521,70 @@ MAV_RESULT GCS_MAVLINK_Sub::handle_command_long_packet(const mavlink_command_lon
         }
         return MAV_RESULT_ACCEPTED;
 
+    case 9999: // this is not taken, so lets give it a shot! For now this is the motor override command id. Sam Lensgraf 6/9/2019.
+        if (!handle_raw_motor_override_packet(packet)) {
+            return MAV_RESULT_FAILED;
+        }
+
+        return MAV_RESULT_ACCEPTED;
+
     default:
         return GCS_MAVLINK::handle_command_long_packet(packet);
     }
+}
+
+
+void copy_float_into_uints(float float_data, uint16_t* destination_1, uint16_t* destination_2) {
+    char data[4];
+
+    char dest_1_bytes[2];
+    char dest_2_bytes[2];
+
+    memcpy(data, &float_data, 4);
+
+    dest_1_bytes[0] = data[0];
+    dest_1_bytes[1] = data[1];
+
+    dest_2_bytes[0] = data[2];
+    dest_2_bytes[1] = data[3];
+
+    memcpy((void*)destination_1, dest_1_bytes, 2);
+    memcpy((void*)destination_2, dest_2_bytes, 2);
+}
+
+// unpacks the four floating point numbers given as the first four params of the COMMAND_LONG packet
+// into eight uint16_t values. The uint16_t is used in this codebase to hold values sent to the motors
+// as a PWM value
+bool GCS_MAVLINK_Sub::handle_raw_motor_override_packet(const mavlink_command_long_t &packet) {
+    float motor_01_bytes = packet.param1;
+    float motor_23_bytes = packet.param2;
+    float motor_45_bytes = packet.param3;
+    float motor_67_bytes = packet.param4;
+
+    uint16_t motor_0_pwm;
+    uint16_t motor_1_pwm;
+    uint16_t motor_2_pwm;
+    uint16_t motor_3_pwm;
+    uint16_t motor_4_pwm;
+    uint16_t motor_5_pwm;
+    uint16_t motor_6_pwm;
+    uint16_t motor_7_pwm;
+
+    copy_float_into_uints(motor_01_bytes, &motor_0_pwm, &motor_1_pwm);
+    copy_float_into_uints(motor_23_bytes, &motor_2_pwm, &motor_3_pwm);
+    copy_float_into_uints(motor_45_bytes, &motor_4_pwm, &motor_5_pwm);
+    copy_float_into_uints(motor_67_bytes, &motor_6_pwm, &motor_7_pwm);
+
+    sub.motors.set_servo_channel_manual_override(0, motor_0_pwm);
+    sub.motors.set_servo_channel_manual_override(1, motor_1_pwm);
+    sub.motors.set_servo_channel_manual_override(2, motor_2_pwm);
+    sub.motors.set_servo_channel_manual_override(3, motor_3_pwm);
+    sub.motors.set_servo_channel_manual_override(4, motor_4_pwm);
+    sub.motors.set_servo_channel_manual_override(5, motor_5_pwm);
+    sub.motors.set_servo_channel_manual_override(6, motor_6_pwm);
+    sub.motors.set_servo_channel_manual_override(7, motor_7_pwm);
+
+    return true;
 }
 
 

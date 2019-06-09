@@ -8,6 +8,8 @@
 #include <RC_Channel/RC_Channel.h>     // RC Channel Library
 #include "AP_MotorsMatrix.h"
 
+const uint32_t AP_MOTORS_MANUAL_OVERRIDE_DURATION_MILLIS(500);
+
 /// @class      AP_MotorsMatrix
 class AP_Motors6DOF : public AP_MotorsMatrix {
 public:
@@ -44,6 +46,8 @@ public:
     // var_info for holding Parameter information
     static const struct AP_Param::GroupInfo        var_info[];
 
+    void set_servo_channel_manual_override(int8_t channel, uint16_t pwm);
+
 protected:
     // return current_limit as a number from 0 ~ 1 in the range throttle_min to throttle_max
     float               get_current_limit_max_throttle() override;
@@ -59,6 +63,10 @@ protected:
     AP_Int8             _motor_reverse[AP_MOTORS_MAX_NUM_MOTORS];
     AP_Float            _forwardVerticalCouplingFactor;
 
+    // manual override by Sam Lensgraf
+    int16_t             _servo_channel_manual_overrides[AP_MOTORS_MAX_NUM_MOTORS];
+    uint32_t            _last_manual_servo_override_set;
+
     float               _throttle_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to throttle (climb/descent)
     float               _forward_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to forward/backward
     float               _lateral_factor[AP_MOTORS_MAX_NUM_MOTORS];  // each motors contribution to lateral (left/right)
@@ -66,4 +74,9 @@ protected:
     // current limiting
     float _output_limited = 1.0f;
     float _batt_current_last = 0.0f;
+
+    // returns true if the manual overrides
+    // set in _servo_channel_manual_overrides have been updated within
+    // AP_MOTORS_MANUAL_OVERRIDE_DURATION_MILLIS milliseconds
+    bool should_use_manual_override();
 };
